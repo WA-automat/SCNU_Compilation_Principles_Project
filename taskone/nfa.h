@@ -58,6 +58,10 @@ public:
     int endState;                       // 表示终止状态
     int stateNum;                       // 表示状态数量
     int maxStateNum;                    // 表示当前最多存储的状态数量
+
+    // 临时存储 NFA 的邻接表
+    QHash<int, QHash<QString, QSet<int>>> tb;
+    void buildTb();
 };
 
 #endif // NFA_H

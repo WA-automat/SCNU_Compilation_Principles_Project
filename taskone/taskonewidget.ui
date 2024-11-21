@@ -44,15 +44,9 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="ReButton">
-           <property name="font">
-            <font>
-             <family>黑体</family>
-             <underline>false</underline>
-            </font>
-           </property>
+          <widget class="QPushButton" name="saveRegexButton">
            <property name="text">
-            <string>正则表达式分析</string>
+            <string>保存正则表达式文件</string>
            </property>
           </widget>
          </item>
@@ -64,31 +58,20 @@
             </font>
            </property>
            <property name="text">
-            <string>上传源代码</string>
+            <string>上传待分词源代码</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="lexButton">
+          <widget class="QPushButton" name="ReButton">
            <property name="font">
             <font>
              <family>黑体</family>
+             <underline>false</underline>
             </font>
            </property>
            <property name="text">
-            <string>源代码分词</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="saveLexButton">
-           <property name="font">
-            <font>
-             <family>黑体</family>
-            </font>
-           </property>
-           <property name="text">
-            <string>保存单词编码</string>
+            <string>正则表达式分析</string>
            </property>
           </widget>
          </item>
@@ -156,7 +139,7 @@
          <enum>QTabWidget::Triangular</enum>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>3</number>
         </property>
         <widget class="QWidget" name="nfaTab">
          <attribute name="title">
@@ -164,7 +147,13 @@
          </attribute>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <widget class="QTableWidget" name="nfaTableWidget"/>
+           <widget class="QTableWidget" name="nfaTableWidget">
+            <property name="font">
+             <font>
+              <family>黑体</family>
+             </font>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -172,21 +161,64 @@
          <attribute name="title">
           <string>Tab 2</string>
          </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QTableWidget" name="dfaTableWidget"/>
+          </item>
+         </layout>
         </widget>
         <widget class="QWidget" name="miniDfaTab">
          <attribute name="title">
           <string>页</string>
          </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QTableWidget" name="miniDfaTableWidget"/>
+          </item>
+         </layout>
         </widget>
         <widget class="QWidget" name="codeTab">
          <attribute name="title">
           <string>页</string>
          </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QTextEdit" name="codeView">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
         <widget class="QWidget" name="lexTab">
          <attribute name="title">
           <string>页</string>
          </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QTextEdit" name="srcEdit">
+            <property name="readOnly">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="lexButton">
+            <property name="font">
+             <font>
+              <family>黑体</family>
+             </font>
+            </property>
+            <property name="text">
+             <string>源代码分词</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTableWidget" name="resultTableWidget"/>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>

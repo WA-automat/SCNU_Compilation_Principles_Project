@@ -16,6 +16,8 @@
 */
 #include "nfa.h"
 
+#include <QDebug>
+
 NFA::NFA(int begin, int end): startState(begin), endState(end), stateNum(0), maxStateNum(100) {
     G.resize(maxStateNum);
     for (int i = 0; i < maxStateNum; i++) {
@@ -121,6 +123,7 @@ void NFA::fromRegex(QString re) {
     if (!stk.empty()) {
         throw QString("NFA build ERROR!!!");
     }
+    buildTb();
 }
 
 /*!
@@ -131,19 +134,26 @@ void NFA::fromRegex(QString re) {
     @attention
 */
 QSet<int> NFA::epsilonClosure(QSet<int> state) {
+    QSet<int> rangeSet = state;
     while (true) {
         QSet<int> tmpSet;
-        for (int item: state) {
-            for (int i = 0; i < maxStateNum; i++) {
-                if (G[item][i] == "epsilon") {
-                    if (!state.contains(i)) {
-                        tmpSet.insert(i);
-                    }
-                }
+        for (int item: rangeSet) {
+            // 邻接矩阵构造
+//            for (int i = 0; i < maxStateNum; i++) {
+//                if (G[item][i] == "epsilon") {
+//                    if (!state.contains(i)) {
+//                        tmpSet.insert(i);
+//                    }
+//                }
+//            }
+            // 邻接表构造
+            if (tb[item].contains("epsilon")) {
+                tmpSet = tmpSet.unite(tb[item]["epsilon"]);
             }
         }
-        if (tmpSet.empty()) break;
+        if (tmpSet.empty() || state.contains(tmpSet)) break;
         state = state.unite(tmpSet);
+        rangeSet = tmpSet;
     }
     return state;
 }
@@ -159,10 +169,15 @@ QSet<int> NFA::epsilonClosure(QSet<int> state) {
 QSet<int> NFA::valueClosure(QSet<int> state, QString value) {
     QSet<int> result;
     for (int item: state) {
-        for (int i = 0; i < maxStateNum; i++) {
-            if (G[item][i] == value) {
-                result.insert(i);
-            }
+        // 邻接矩阵构造
+//        for (int i = 0; i < maxStateNum; i++) {
+//            if (G[item][i] == value) {
+//                result.insert(i);
+//            }
+//        }
+        // 邻接表构造
+        if (tb[item].contains(value)) {
+            result = result.unite(tb[item][value]);
         }
     }
     return epsilonClosure(result);
@@ -298,5 +313,24 @@ void NFA::nfaOption() {
         stateSet.insert("epsilon");
     } else {
         throw QString("NFA build ERROR!!!");
+    }
+}
+
+/*!
+    @name   buildTb
+    @brief  构建邻接表
+    @param
+    @return
+    @attention
+*/
+void NFA::buildTb() {
+    for (int i = 0; i < stateNum; i++) {
+        if (!tb.contains(i)) tb[i] = QHash<QString, QSet<int>>();
+        for (int j = 0; j < stateNum; j++) {
+            if (!tb[i].contains(G[i][j])) {
+                tb[i][G[i][j]] = QSet<int>();
+            }
+            tb[i][G[i][j]] = tb[i][G[i][j]].unite(QSet<int>({j}));
+        }
     }
 }

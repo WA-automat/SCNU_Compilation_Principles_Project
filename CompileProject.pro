@@ -15,7 +15,11 @@ SOURCES += \
     taskone/nfa.cpp \
     taskone/taskonewidget.cpp \
     taskone/utils/utils.cpp \
-    tasktwo/tasktwowidget.cpp \
+    tasktwo/analysistable.cpp \
+    tasktwo/intermediatecode.cpp \
+    tasktwo/lr.cpp \
+    tasktwo/syntaxtree.cpp \
+    tasktwo/tasktwowidget.cpp
 
 HEADERS += \
     mainwindow/mainwindow.h \
@@ -23,7 +27,11 @@ HEADERS += \
     taskone/nfa.h \
     taskone/taskonewidget.h \
     taskone/utils/utils.h \
-    tasktwo/tasktwowidget.h \
+    tasktwo/analysistable.h \
+    tasktwo/intermediatecode.h \
+    tasktwo/lr.h \
+    tasktwo/syntaxtree.h \
+    tasktwo/tasktwowidget.h
 
 FORMS += \
     mainwindow/mainwindow.ui \

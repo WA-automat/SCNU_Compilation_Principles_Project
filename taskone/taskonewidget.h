@@ -19,6 +19,7 @@
 
 #include <QWidget>
 #include "nfa.h"
+#include "dfa.h"
 
 namespace Ui {
 class TaskOneWidget;
@@ -34,11 +35,16 @@ public:
 
     QHash<QString, QString> id2str; // 正则表达式名称到正则表达式的映射
     QHash<QString, NFA> id2nfa;     // 正则表达式名称到NFA的映射
+    QHash<QString, DFA> id2dfa;     // 正则表达式名称到DFA的映射
+    QHash<QString, DFA> id2minidfa; // 正则表达式名称到最小化DFA的映射
 
 private:
     Ui::TaskOneWidget *ui;
 
-    void showNFA(NFA nfa);          // 展示 NFA
+    void showNFA(NFA& nfa);          // 展示 NFA
+    void showDFA(DFA& dfa);          // 展示 DFA
+    void showMiniDFA(DFA& minidfa);  // 展示 MiniDFA
+    QString toCode();   // 生成词法分析程序
 };
 
 #endif // TASKONEWIDGET_H

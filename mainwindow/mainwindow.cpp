@@ -26,10 +26,11 @@ MainWindow::MainWindow(QWidget *parent)
     // 基本布局
     this->setWindowFlags(Qt::Window);
     this->showMaximized();
-    this->setWindowTitle("编译原理课程设计：20212821020");
-    ui->tabWidget->setTabText(0, "项目任务1");
-    ui->tabWidget->setTabText(1, "项目任务2");
+    this->setWindowTitle("编译原理课程设计：22级计科2班 林泽勋 20212821020");
+    ui->tabWidget->setTabText(0, "项目任务一");
+    ui->tabWidget->setTabText(1, "项目任务二");
     ui->tabWidget->setCurrentIndex(0);
+
 }
 
 MainWindow::~MainWindow()
