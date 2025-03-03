@@ -28,9 +28,8 @@
 void SyntaxNode::showAnalysis(QTreeWidgetItem *item, SyntaxNode* tr) {
     if (tr == nullptr) return;
     QString s;
-    if (tr->str != "") s += tr->str;
-    if (tr->note != "" && tr->str != "") s += ": ";
-    if (tr->note != "") s += tr->note;
+    if (tr->str != "") s = tr->str;
+    if (tr->note != "") s = tr->note;
     QTreeWidgetItem *newItem = new QTreeWidgetItem(QStringList() << s);
     item->addChild(newItem);
     for (SyntaxNode* childTr : tr->children) {
@@ -47,11 +46,7 @@ void SyntaxNode::showAnalysis(QTreeWidgetItem *item, SyntaxNode* tr) {
 */
 void SyntaxNode::showSyntax(QTreeWidgetItem *item, SyntaxNode *tr) {
     if (tr == nullptr) return;
-    QString s;
-    if (tr->str != "") s += tr->str;
-    if (tr->note != "" && tr->str != "") s += ": ";
-    if (tr->note != "") s += tr->note;
-    QTreeWidgetItem *newItem = new QTreeWidgetItem(QStringList() << s);
+    QTreeWidgetItem *newItem = new QTreeWidgetItem(QStringList() << tr->note);
     if (tr->str != "empty") {
         item->addChild(newItem);
         for (SyntaxNode* childTr : tr->children) {

@@ -238,7 +238,31 @@ TaskOneWidget::TaskOneWidget(QWidget *parent) :
             QTextStream in(&sample);
             in.setCodec("UTF-8"); // 设置编码格式为 UTF-8
             QString lex = in.readAll();
-            QStringList tokenList = lex.split('\n');
+            QStringList text = lex.split('\n');
+            QStringList hashString = text[1].split(' ');
+            QHash<QString, QString> hash;
+            hashString.pop_back();
+
+            for (int i = 0; i < hashString.size(); i += 2) {
+                hash.insert(hashString[i + 1], hashString[i]);
+            }
+
+            QStringList lexCode = text[0].split(' ');
+
+            QStringList tokenList;
+            int id = 0;
+            while (id < lexCode.size()) {
+                QString word = hash[lexCode[id]];
+                if (this->id2minidfa.keys().contains(word)) {
+                    id++;
+                    tokenList.append(lexCode[id] + " " + word);
+                } else {
+                    tokenList.append(word + " " + word);
+                }
+                id++;
+            }
+
+//            QStringList tokenList = lex.split('\n');
 //            qDebug() << tokenList;
             ui->resultTableWidget->setRowCount(tokenList.size() - 1);
             ui->resultTableWidget->setColumnCount(2);
@@ -457,14 +481,18 @@ QString TaskOneWidget::toCode() {
     code += "#include <iostream>\n";
     code += "#include <fstream>\n";
     code += "#include <string>\n";
+    code += "#include <cstring>\n";
     code += "#include <cctype>\n";
+    code += "#include <map>\n";
     code += "using namespace std;\n\n";
 
-    code += "ifstream in(\"src.txt\", ios::in);\n";         // TODO: 源代码存储的位置
-    code += "ofstream out(\"sample.lex\", ios::out | ios::trunc);\n";      // TODO: 单词编码保存的位置
+    code += "ifstream in(\"src.txt\", ios::in);\n";         // 源代码存储的位置
+    code += "ofstream out(\"sample.lex\", ios::out | ios::trunc);\n";      // 单词编码保存的位置
     code += "string buf, buf_err, buf_suc;\n";              // 存储单词字符串
     code += "string token, token_suc;\n";                   // 存储单词类型
-    code += "int read_cnt;\n\n";                            // 当前读到文件的位置
+    code += "int read_cnt;\n";                            // 当前读到文件的位置
+    code += "map<string, int> mp;\n";                       // 存储单词编码的映射
+    code += "int idx = 1;\n\n";                                   // 存储单词编码当前位置
 
     // 跳过空白字符
     code += "void skipBlank() {\n";
@@ -478,9 +506,38 @@ QString TaskOneWidget::toCode() {
     code += "\t\t\tbreak;\n";
     code += "\t\t}\n";
     code += "\t}\n";
-    code += "}\n\n";
+    code += "}\n";
+
+    code += R"(
+bool IsDigit(char c) {
+    if (c >= '0' && c <= '9') return 1;
+    else return 0;
+}
+
+bool IsPositiveDigit(char c) {
+    if (c >= '1' && c <= '9') return 1;
+    else return 0;
+}
+
+bool IsAlpha(char c) {
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return 1;
+    else return 0;
+}
+
+bool IsLower(char c) {
+    if (c >= 'a' && c <= 'z') return 1;
+    else return 0;
+}
+
+bool IsUpper(char c) {
+    if (c >= 'A' && c <= 'Z') return 1;
+    else return 0;
+}
+
+)";
 
     for (auto dfaKey: id2minidfa.keys()) {
+        qDebug() << dfaKey;
         DFA minidfa = id2minidfa[dfaKey];
         // 生成各个DFA
         code += "bool check_" + dfaKey + "() {\n";
@@ -490,9 +547,117 @@ QString TaskOneWidget::toCode() {
         code += "\t\tswitch(state) {\n";
         for (int i = 0; i < minidfa.stateNum; i++) {        // 遍历状态，每个状态需要一个case
             code += "\t\tcase " + QString::number(i) + ":\n";
-            code += "\t\t\tswitch (c) {\n";
 
+            // 调用IsDigit
+            bool IsDigitFlag = true;
+            if (minidfa.G[i].keys().contains(QString::number(0))) {
+                int tmpState = minidfa.G[i][QString::number(0)];
+                for (int j = 1; j <= 9; j++) {
+                    if (!minidfa.G[i].keys().contains(QString::number(j)) || tmpState != minidfa.G[i][QString::number(j)]) {
+                        IsDigitFlag = false;
+                        break;
+                    }
+                }
+                if (IsDigitFlag) {
+                    code += "\t\t\tif (IsDigit(c)) {\n";
+                    code += "\t\t\t\tstate = " + QString::number(minidfa.G[i][QString::number(0)]) + ";\n"; // 状态转移
+                    code += "\t\t\t\tbuf += c;\n"; // buf附加字符
+                    code += "\t\t\t\tin.get(c);\n"; // buf附加字符
+                    code += "\t\t\t\tbreak;\n";
+                    code += "\t\t\t}\n";
+                }
+            }
+
+            // 调用IsPositiveDigit
+            bool IsPositiveDigitFlag = true;
+            if (!IsDigitFlag && minidfa.G[i].keys().contains(QString::number(1))) {
+                int tmpState = minidfa.G[i][QString::number(1)];
+                for (int j = 2; j <= 9; j++) {
+                    if (!minidfa.G[i].keys().contains(QString::number(j)) || tmpState != minidfa.G[i][QString::number(j)]) {
+                        IsPositiveDigitFlag = false;
+                        break;
+                    }
+                }
+                if (IsPositiveDigitFlag) {
+                    code += "\t\t\tif (IsPositiveDigit(c)) {\n";
+                    code += "\t\t\t\tstate = " + QString::number(minidfa.G[i][QString::number(1)]) + ";\n"; // 状态转移
+                    code += "\t\t\t\tbuf += c;\n"; // buf附加字符
+                    code += "\t\t\t\tin.get(c);\n"; // buf附加字符
+                    code += "\t\t\t\tbreak;\n";
+                    code += "\t\t\t}\n";
+                }
+            }
+
+            bool IsAlphaFlag = true;
+            if (minidfa.G[i].keys().contains(QString('a'))) {
+                int tmpState = minidfa.G[i][QString('a')];
+                for (char j = 'a'; j <= 'z'; j++) {
+                    if (!minidfa.G[i].keys().contains(QString(j)) || tmpState != minidfa.G[i][QString(j)]) {
+                        IsAlphaFlag = false;
+                        break;
+                    }
+                }
+                for (char j = 'A'; j <= 'Z'; j++) {
+                    if (!minidfa.G[i].keys().contains(QString(j)) || tmpState != minidfa.G[i][QString(j)]) {
+                        IsAlphaFlag = false;
+                        break;
+                    }
+                }
+                if (IsAlphaFlag) {
+                    code += "\t\t\tif (IsAlpha(c)) {\n";
+                    code += "\t\t\t\tstate = " + QString::number(minidfa.G[i][QString('a')]) + ";\n"; // 状态转移
+                    code += "\t\t\t\tbuf += c;\n"; // buf附加字符
+                    code += "\t\t\t\tin.get(c);\n"; // buf附加字符
+                    code += "\t\t\t\tbreak;\n";
+                    code += "\t\t\t}\n";
+                }
+            }
+
+            bool IsLowerFlag = true;
+            if (!IsAlphaFlag && minidfa.G[i].keys().contains(QString('a'))) {
+                int tmpState = minidfa.G[i][QString('a')];
+                for (char j = 'a'; j <= 'z'; j++) {
+                    if (!minidfa.G[i].keys().contains(QString(j)) || tmpState != minidfa.G[i][QString(j)]) {
+                        IsLowerFlag = false;
+                        break;
+                    }
+                }
+                if (IsLowerFlag) {
+                    code += "\t\t\tif (IsLower(c)) {\n";
+                    code += "\t\t\t\tstate = " + QString::number(minidfa.G[i][QString('a')]) + ";\n"; // 状态转移
+                    code += "\t\t\t\tbuf += c;\n"; // buf附加字符
+                    code += "\t\t\t\tin.get(c);\n"; // buf附加字符
+                    code += "\t\t\t\tbreak;\n";
+                    code += "\t\t\t}\n";
+                }
+            }
+
+            bool IsUpperFlag = true;
+            if (!IsAlphaFlag && minidfa.G[i].keys().contains(QString('A'))) {
+                int tmpState = minidfa.G[i][QString('A')];
+                for (char j = 'A'; j <= 'Z'; j++) {
+                    if (!minidfa.G[i].keys().contains(QString(j)) || tmpState != minidfa.G[i][QString(j)]) {
+                        IsUpperFlag = false;
+                        break;
+                    }
+                }
+                if (IsUpperFlag) {
+                    code += "\t\t\tif (IsUpper(c)) {\n";
+                    code += "\t\t\t\tstate = " + QString::number(minidfa.G[i][QString('A')]) + ";\n"; // 状态转移
+                    code += "\t\t\t\tbuf += c;\n"; // buf附加字符
+                    code += "\t\t\t\tin.get(c);\n"; // buf附加字符
+                    code += "\t\t\t\tbreak;\n";
+                    code += "\t\t\t}\n";
+                }
+            }
+
+            code += "\t\t\tswitch (c) {\n";
             for (QString changeItem: minidfa.G[i].keys()) {    // 遍历转移，每个转移需要一个case
+                if (IsDigitFlag && changeItem[0] >= '0' && changeItem[0] <= '9') continue;
+                if (IsPositiveDigitFlag && changeItem[0] >= '1' && changeItem[0] <= '9') continue;
+                if (IsAlphaFlag && ((changeItem[0] >= 'a' && changeItem[0] <= 'z') || (changeItem[0] >= 'A' && changeItem[0] <= 'Z'))) continue;
+                if (IsLowerFlag && changeItem[0] >= 'a' && changeItem[0] <= 'z') continue;
+                if (IsUpperFlag && changeItem[0] >= 'A' && changeItem[0] <= 'Z') continue;
                 code += "\t\t\tcase \'" + changeItem + "\':\n";
                 code += "\t\t\t\tstate = " + QString::number(minidfa.G[i][changeItem]) + ";\n"; // 状态转移
                 code += "\t\t\t\tbuf += c;\n"; // buf附加字符
@@ -579,12 +744,28 @@ QString TaskOneWidget::toCode() {
     code += "\t\t\tout << buf_err << \" UNKNOWN\" << endl;\n";
     code += "\t\t\texit(1);\n";
     code += "\t\t}\n";
-    code += "\t\tout << buf_suc << \" \" << token_suc << endl;\n";
+
+//    code += "\t\tout << buf_suc << \" \" << token_suc << endl;\n";
+    code += "\t\tif (!isupper(token_suc[0])) {\n";
+    code += "\t\t\tif (!mp.count(token_suc)) mp[token_suc] = idx++;\n";
+    code += "\t\t\tout << mp[token_suc] << \' \' << buf_suc << \' \';\n";
+    code += "\t\t} else {\n";
+    code += "\t\t\tif (!mp.count(buf_suc)) mp[buf_suc] = idx++;\n";
+    code += "\t\t\tout << mp[buf_suc] << \' \';\n";
+    code += "\t\t}\n";
+
     code += "\t\tread_cnt += buf_suc.size();\n";
     code += "\t\tin.seekg(read_cnt, ios::beg);\n";
     code += "\t\tskipBlank();\n";
 
     code += "\t}\n";    // while 结束
+
+    // 打印键值对映射
+    code += "\tout << endl;\n";
+    code += "\tfor (auto item : mp) {\n";
+    code += "\t\tout << item.first << \' \' << item.second << \' \';\n";
+    code += "\t}\n";
+
     code += "\tin.close();\n";
     code += "\tout.close();\n";
     code += "\treturn 0;\n";

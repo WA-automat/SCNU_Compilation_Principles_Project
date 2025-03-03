@@ -392,7 +392,32 @@ TaskTwoWidget::TaskTwoWidget(QWidget *parent) :
                 QTextStream in(&file);
                 in.setCodec("UTF-8"); // 设置编码格式为 UTF-8
                 QString allText = in.readAll();
-                QStringList lines = allText.split('\n');
+
+                QStringList text = allText.split('\n');
+                QStringList hashString = text[1].split(' ');
+                QHash<QString, QString> hash;
+                hashString.pop_back();
+
+                for (int i = 0; i < hashString.size(); i += 2) {
+                    hash.insert(hashString[i + 1], hashString[i]);
+                }
+
+                QStringList lexCode = text[0].split(' ');
+                lexCode.pop_back();
+
+                QStringList lines;
+                int id = 0;
+                while (id < lexCode.size()) {
+                    QString word = hash[lexCode[id]];
+                    if (QSet<QString>({"number", "identifier", "annotation"}).contains(word)) {
+                        id++;
+                        lines.append(lexCode[id] + " " + word);
+                    } else {
+                        lines.append(word + " " + word);
+                    }
+                    id++;
+                }
+
                 int len = 0;
                 for (QString line: lines) {
                     if (line == "") continue;
@@ -947,13 +972,14 @@ TaskTwoWidget::TaskTwoWidget(QWidget *parent) :
         for (auto node: analysisTreeStack) {
             tree->root->children.push_back(node);
         }
-        QTreeWidgetItem* topItem = new QTreeWidgetItem(QStringList() << "start");
+        QTreeWidgetItem* topItem = new QTreeWidgetItem(QStringList() << "分析树结果");
         ui->treeWidget->addTopLevelItem(topItem);
         tree->showAnalysis(topItem);
 
         ui->treeWidget->expandAll();
 
         // 构建语法树
+        QTreeWidgetItem* topItem2 = nullptr;
         if (!syntaxAction.empty()) {
             ui->syntaxTreeWidget->clear();
             ui->syntaxTreeWidget->setColumnCount(1);
@@ -961,7 +987,7 @@ TaskTwoWidget::TaskTwoWidget(QWidget *parent) :
             for (auto node: syntaxTreeStack) {
                 syntaxTree->root->children.push_back(node);
             }
-            QTreeWidgetItem* topItem2 = new QTreeWidgetItem(QStringList() << "start");
+            topItem2 = new QTreeWidgetItem(QStringList() << "语法树结果");
             ui->syntaxTreeWidget->addTopLevelItem(topItem2);
             syntaxTree->showSyntax(topItem2);
 
@@ -979,7 +1005,7 @@ TaskTwoWidget::TaskTwoWidget(QWidget *parent) :
 
     // 保存中间代码
     connect(ui->saveButton, &QPushButton::clicked, this, [&]() {
-        QString fileName = QString("intermediate_code") + QString::number(QDateTime::currentDateTime().toMSecsSinceEpoch()) + QString(".txt");
+        QString fileName = QString("intermediate_code") + QString::number(QDateTime::currentDateTime().toMSecsSinceEpoch()) + QString(".ic");
         QFile file(fileName);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&file);
